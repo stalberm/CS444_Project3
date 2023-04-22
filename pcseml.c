@@ -10,6 +10,7 @@ int num_consumers;
 int num_events;
 int max_outstanding;
 struct eventbuf *eb;
+
 sem_t *mutex;
 sem_t *items;
 sem_t *spaces;
@@ -45,6 +46,7 @@ void *run_producer(void *arg)
         sem_post(mutex);
         sem_post(items);
     }
+
     printf("P%d: exiting\n", *id);
     return NULL;
 }
@@ -57,13 +59,16 @@ void *run_consumer(void *arg)
     {
         sem_wait(items);
         sem_wait(mutex);
+
         if(eventbuf_empty(eb))
         {
             sem_post(mutex);
             break;
         }
+
         int event_num = eventbuf_get(eb);
         printf("C%d: got event %d\n", *id, event_num);
+
         sem_post(mutex);
         sem_post(spaces);
     }
@@ -119,4 +124,6 @@ int main(int argc, char *argv[])
     {
         pthread_join(cons_thread[i], NULL);
     }
+
+    eventbuf_free(eb);
 }
